@@ -1,4 +1,8 @@
 from pathlib import Path
 
 
-print(Path.cwd() / "data")
+print(str(Path.cwd() / "data"))
+
+
+dict = {"a":1, "b":2}
+print(list(dict.keys()))

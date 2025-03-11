@@ -4,3 +4,5 @@ matplotlib
 faiss-cpu
 tqdm
 scikit-learn
+pathlib
+google-genai
