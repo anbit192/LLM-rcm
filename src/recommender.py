@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Recommender:
     _instance = None
 
@@ -14,7 +15,8 @@ class Recommender:
     @classmethod
     def get_instance(cls, index, movie_list, k_per_item=5, output_k=10, negative_thres=3, negative_alpha=-1):
         if (cls._instance is None):
-            cls._instance = cls(index, movie_list, k_per_item, output_k, negative_thres, negative_alpha)
+            cls._instance = cls(index, movie_list, k_per_item,
+                                output_k, negative_thres, negative_alpha)
         return cls._instance
 
     def _similar_search(self, movie):
@@ -22,7 +24,7 @@ class Recommender:
         D, I = self.index.search(np.array([embed_input]), self.k_per_item)
 
         return D, I
-    
+
     def _get_rcm_ranking(self):
         user_dislike = []
         user_like = []
@@ -46,11 +48,11 @@ class Recommender:
                 if (m_rating < self.negative_thres):
                     if (id_ in user_like):
                         continue
-                    
+
                     user_dislike.append(row["vectorID"])
                     wgt = (combine_rating + self.negative_alpha *
-                        (5 - m_rating)) * dist_
-                    
+                           (5 - m_rating)) * dist_
+
                     recommend_dict[id_] = recommend_dict.get(id_, 0) - wgt
                 else:
                     user_like.append(row["vectorID"])
@@ -59,21 +61,18 @@ class Recommender:
 
                     recommend_dict[id_] = recommend_dict.get(id_, 0) + wgt
 
-        
         print(user_dislike)
         for id_ in set(user_dislike):
-            recommend_dict.pop(id_)
+            recommend_dict.pop(id_, -1)
 
         sorted_candidates = sorted(recommend_dict.items(),
-                           key=lambda x: x[1], reverse=True)
-        
+                                   key=lambda x: x[1], reverse=True)
+
         return sorted_candidates
-    
+
     def set_movie_list(self, movie_list):
         self.movie_list = movie_list
-    
+
     def get_top_k(self):
         res = self._get_rcm_ranking()
         return [id_ for id_, _ in res[:self.output_k]]
-
-    
