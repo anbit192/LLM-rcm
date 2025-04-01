@@ -30,7 +30,7 @@ def _process_user_input(user_dict):
 
     return user_df[["vectorID", "title", "genres", "tags", "rating", "weight_rating", "timestamp", "page_content"]]
 
-rec = Recommender.get_instance(index, movie_list=_process_user_input(user_watched))
+rec = Recommender.get_instance(index, movie_list=_process_user_input(user_watched), k_per_item=15, negative_alpha=-1)
 
 def get_movie_by_id(id):
     movies = get_movies_from_ids([id])
@@ -66,15 +66,7 @@ def rate_movie(rate):
         raise Exception("Movie not exist in database")
 
     user_watched[movieId] = (rate.user_rate, _get_current_timestamp())
-
-    id_list = list(user_watched.keys())
-    ratings, timestamps = zip(*user_watched.values())
-
-    user_df = movie_df.loc[id_list].copy()
-    user_df["rating"] = ratings
-    user_df["timestamp"] = timestamps
-
-    print(user_df)
+    print(user_watched)
     return rate
 
 
@@ -83,9 +75,12 @@ def _get_current_timestamp():
 
 
 def recommend_movies():
+    if (len(user_watched) > 0):
+        rec.set_movie_list(_process_user_input(user_watched))
     top_k = rec.get_top_k()
     movies = movie_df.iloc[top_k]
     print(movies[["title", "genres"]])
+    print(rec._get_rcm_ranking())
     return augmented(movies)
 
 

@@ -53,7 +53,7 @@ class Recommender:
                     wgt = (combine_rating + self.negative_alpha *
                            (5 - m_rating)) * dist_
 
-                    recommend_dict[id_] = recommend_dict.get(id_, 0) - wgt
+                    recommend_dict[id_] = recommend_dict.get(id_, 0) + wgt
                 else:
                     user_like.append(row["vectorID"])
 
