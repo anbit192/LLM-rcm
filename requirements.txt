@@ -7,3 +7,8 @@ scikit-learn
 pathlib
 google-genai
 fastapi
+uvicorn 
+nbconvert 
+nbformat 
+jupyter
+python-dotenv
