@@ -12,3 +12,4 @@ nbconvert
 nbformat 
 jupyter
 python-dotenv
+streamlit
