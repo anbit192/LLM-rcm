@@ -4,6 +4,7 @@ from load_data import *
 from models import *
 from datetime import datetime
 from state import *
+from collections import defaultdict
 
 
 movie_df = get_movie_df()
@@ -73,6 +74,21 @@ def rate_movie(rate):
 def _get_current_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+def _categorize_movie(movies):
+    genre_map = defaultdict(list)
+    for i in range(len(movies)):
+        title = movies.iloc[i]["title"]
+        splitted_genres = [g for g in movies.iloc[i]["genres"].split(",")]
+        
+        for genre in splitted_genres:
+            genre_map[genre].append(
+                {
+                    "title": title
+                }
+            )
+
+    return [{ genre: movies } for genre, movies in sorted(genre_map.items())]
+
 
 def recommend_movies():
     if (len(user_watched) > 0):
@@ -81,7 +97,7 @@ def recommend_movies():
     movies = movie_df.iloc[top_k]
     print(movies[["title", "genres"]])
     print(rec._get_rcm_ranking())
-    return augmented(movies)
+    return _categorize_movie(movies)
 
 
 def augmented(movies):
