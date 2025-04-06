@@ -25,6 +25,51 @@ async def hello_world():
     }
 
 
+@app.post("/create_user", response_model=UserInfo, status_code=status.HTTP_201_CREATED)
+async def create_user(user: UserInfo):
+    """
+    Tạo mới một user nếu chưa tồn tại.
+    """
+    return services.create_user(user)
+
+
+@app.get("/get_all_users", response_model=List[UserInfo], status_code=status.HTTP_200_OK)
+async def get_all_users():
+    """
+    Lấy danh sách tất cả user trong hệ thống.
+    """
+    return services.get_all_users()
+
+
+@app.post("/select_user", response_model=UserInfo, status_code=status.HTTP_200_OK)
+async def select_user(user: UserInfo):
+    """
+    Chọn user hiện tại để dùng trong hệ thống (giống login tạm thời).
+    """
+    return services.select_user(user)
+
+
+@app.get("/get_current_user", response_model=UserInfo, status_code=status.HTTP_200_OK)
+async def get_current_user():
+    """
+    Lấy thông tin user hiện tại đã được chọn.
+    """
+    return services.session.get_user()
+ 
+
+@app.get("/get_user_ratings", response_model=List[WatchedMovieOut], status_code=status.HTTP_200_OK)
+async def get_user_ratings():
+    """
+    Lấy tất cả đánh giá của user hiện tại.
+    """
+    current_user = services.session.get_user()
+    return services.get_user_rates(UserInfo(**current_user))
+
+
+
+
+
+
 @app.get("/get_movie/{id}", response_model=MovieInfosOut, status_code=status.HTTP_200_OK)
 async def get_movie_by_id(id: int):
     """
@@ -54,7 +99,7 @@ async def rate_movies(rate: WatchedMovie):
     """
     Đánh giá 1 bộ phim. Nếu muốn đánh giá lại, có thể gửi lại cùng Id của phim đó.
     """
-    return services.rate_movie(rate)
+    return services.create_rating(rate)
 
 
 @app.get("/get_recommend_movies", response_model=MoviesResponse, status_code=status.HTTP_200_OK)

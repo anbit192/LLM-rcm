@@ -3,35 +3,163 @@ from recommender import Recommender
 from load_data import *
 from models import *
 from datetime import datetime
-from state import *
+from database import *
 from collections import defaultdict
+from state import UserSession
 
 
 movie_df = get_movie_df()
 index = get_embed_vectors()
 
-client = get_google_model()
+# client = get_google_model()
 
-default_user_watched = {
-    1: (5.0, '2025-04-01 12:50:09'), 
-    2: (1.0, '2025-04-01 12:50:26'), 
-    3: (3.0, '2025-04-02 12:50:26')
-}
+def _get_current_timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def _process_user_input(user_dict):
-    if (len(user_dict) <= 0):
-        user_dict = default_user_watched
 
-    id_list = list(user_dict.keys())
-    ratings, timestamps = zip(*user_dict.values())
+if (rate_col.count_documents({}) == 0 and user_col.count_documents({}) == 0):
+    test_user = {"email":"testuser@example.com", "username":"TestUser"}
+    res1 = user_col.insert_one(test_user)
+
+    ratings = [
+        {
+            "userId": res1.inserted_id,
+            "movieId": 1,
+            "user_rate": 4.5,
+            "timestamp": _get_current_timestamp()
+        },
+        {
+            "userId": res1.inserted_id,
+            "movieId": 2,
+            "user_rate": 1,
+            "timestamp": _get_current_timestamp()
+        },
+        {
+            "userId":res1.inserted_id,
+            "movieId": 3,
+            "user_rate": 5.0,
+            "timestamp": _get_current_timestamp()
+        },
+    ]
+
+    rate_col.insert_many(ratings)
+
+
+
+def get_all_users():
+    return [UserInfo(**doc) for doc in user_col.find()]
+
+
+def _check_exist(user):
+    user_ = user_col.find_one({"email":user.email})
+    return user_ is not None
+
+
+def get_user_by_email(email:str):
+    return user_col.find_one({"email":email})
+
+session = UserSession.get_instance()
+if not session.is_logged_in():
+    user = get_user_by_email("testuser@example.com")
+    session.set_user(user)
+
+def get_user_by_id(id):
+    # print(id)
+    return user_col.find_one({"_id":id})
+
+
+
+def create_user(user: UserInfo):
+    if (_check_exist(user)):
+        raise Exception("Email already exist")
+    user_col.insert_one(user.model_dump())
+    return user
+
+def get_user_rates(user:UserInfo):
+    if (_check_exist(user) is None):
+        raise Exception("User does not exist")
+    
+    user_ = get_user_by_email(email=user.email)
+    res = rate_col.find({"userId":user_["_id"]})
+
+    return [WatchedMovieOut(**doc) for doc in res]
+
+
+def create_rating(user_rate:WatchedMovie):
+    # print(user_rate)
+    current_user = session.get_user()
+    
+    res = rate_col.find_one({
+        "userId":current_user["_id"],
+        "movieId": user_rate.movieId
+    })
+
+    if (res is not None):
+        print("Editted!")
+        return edit_rating(user_rate)
+    
+    temp = user_rate.model_dump()
+    temp["timestamp"] = _get_current_timestamp()
+    temp["userId"] = current_user["_id"]
+
+    rate_col.insert_one(temp)
+ 
+    return WatchedMovieOut.model_validate(temp)
+
+
+def select_user(user: UserInfo):
+    user_ = get_user_by_email(user.email)
+    if (user_ is None):
+        raise Exception("User does not exist")
+    session.set_user(user_)
+
+    return user_
+
+def edit_rating(user_rate:WatchedMovie):
+    current_user = session.get_user()
+    
+    res = rate_col.find_one({
+        "userId":current_user["_id"],
+        "movieId": user_rate.movieId
+    })
+
+    if (res is not None):
+        rate_col.update_one(
+            {"_id": res["_id"]},
+            {"$set": {
+                "user_rate":user_rate.user_rate,
+                "timestamp":_get_current_timestamp()
+            }}
+        )
+    else:
+        raise Exception("Movie not found")
+    
+    user_rate.userId = current_user["_id"]
+    return user_rate
+
+
+
+def _process_user_input(current_user):
+
+    docs = list(rate_col.find({"userId": current_user["_id"]}))
+
+    id_list = [d["movieId"] for d in docs]
+    ratings = [d["user_rate"] for d in docs]
+    timestamps = [d["timestamp"] for d in docs]
 
     user_df = movie_df.loc[id_list].copy()
     user_df["rating"] = ratings
     user_df["timestamp"] = timestamps
 
-    return user_df[["vectorID", "title", "genres", "tags", "rating", "weight_rating", "timestamp", "page_content"]]
+    
 
-rec = Recommender.get_instance(index, movie_list=_process_user_input(user_watched), k_per_item=15, negative_alpha=-1)
+    return user_df[[
+        "vectorID", "title", "genres", "tags",
+        "rating", "weight_rating", "timestamp", "page_content"
+    ]]
+
+rec = Recommender.get_instance(index, movie_list=_process_user_input(session.get_user()), k_per_item=15, negative_alpha=-1)
+
 
 def get_movie_by_id(id):
     movies = get_movies_from_ids([id])
@@ -59,20 +187,6 @@ def search_movie_from_query(query_str):
     return get_movies_from_ids(res)
     
 
-def rate_movie(rate):
-    movieId = rate.movieId
-    movies = get_movie_by_id(movieId)
-
-    if not movies:
-        raise Exception("Movie not exist in database")
-
-    user_watched[movieId] = (rate.user_rate, _get_current_timestamp())
-    print(user_watched)
-    return rate
-
-
-def _get_current_timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def _categorize_movie(movies):
     genre_map = defaultdict(list)
@@ -91,8 +205,7 @@ def _categorize_movie(movies):
 
 
 def recommend_movies():
-    if (len(user_watched) > 0):
-        rec.set_movie_list(_process_user_input(user_watched))
+    rec.set_movie_list(_process_user_input(session.get_user()))
     top_k = rec.get_top_k()
     movies = movie_df.iloc[top_k]
     print(movies[["title", "genres"]])
@@ -100,87 +213,10 @@ def recommend_movies():
     return _categorize_movie(movies)
 
 
-def augmented(movies):
-    recommend_contents = "\n======\n".join(
-    movies["page_content"].tolist())
-
-    system_prompt = (
-    "You are an AI assistant majoring in categorize things. Your task is to group the given movies by their genres into categories"
-    """Your task is as follows:
-        1. Group the movies into categories based on their genres.
-        2. If a movie has multiple genres, assign it to the category corresponding to its primary genre (choose the first listed genre).
-        3. For each category, list all movies that belong to that category."""
-    )
-
-    user_prompt = f"""
-    Below is a list of movies. Each movie is formatted as follows:
-
-    --------------------------------------------------
-    Movie Format:
-    (Title)
-    (Genres)        // A comma-separated list of genres.
-    (Tags)          // A comma-separated list of tags.
-    --------------------------------------------------
-    For example:
-    Now, Voyager (1942)
-    Drama, Romance
-    Classic, Timeless, Iconic
-    --------------------------------------------------
-
-    Please group these movies into categories based on their genres in the following format:
-    **Genre1**
-    - Movie1
-    - Movie2
-    ...
-
-    **Genre2**
-    - Movie1
-    ...
-
-    Here are the movies:
-    {recommend_contents}
-    """
-
-    res = client.models.generate_content(
-        model=GEN_MODEL,
-        contents=[system_prompt, user_prompt]
-    )
-
-    system_prompt_2 = "You are a JSON formatter AI assistant, your job is convert given data into valid JSON format."
-    user_prompt_2 = f"""Please convert the following text into JSON format as follow:  
-    [
-        {{
-            "Genre1": [
-                {{"title": "Movie Title 1"}},
-                {{"title": "Movie Title 3"}}
-            ]
-        }},
-        {{
-            "Genre2": [
-                {{"title": "Movie Title 1"}},
-                {{"title": "Movie Title 5"}},
-                ...
-            ]
-        }},
-        ...
-    ]
-
-
-    Here's the text:
-    {res.text}
-
-    Please return ONLY the JSON in the format above, WITHOUT any explaination, additional informations or enclosing triple backticks.
-
-    """
-
-    final_res = client.models.generate_content(
-        model=GEN_MODEL,
-        contents=[system_prompt_2, user_prompt_2]
-    )
-
-    print(final_res.text)
-
-    return MoviesResponse.model_validate_json(final_res.text.strip("```json").strip("```").strip())
-
-
     
+def main():
+    print(recommend_movies())
+
+
+if __name__ == "__main__":
+    main()

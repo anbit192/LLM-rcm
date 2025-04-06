@@ -13,3 +13,4 @@ nbformat
 jupyter
 python-dotenv
 streamlit
+pymongo
