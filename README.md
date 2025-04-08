@@ -1,3 +1,3 @@
-- pip install -r requirements.txt
-- execute run.bat
-- streamlit run frontend.py
+- Cài thư viện cần thiết: pip install -r requirements.txt
+- Cài mongodb và kết nối vs server mongodb, điền các tham số cần thiết trong .env
+- Chạy server frontend và backend: run.bat
