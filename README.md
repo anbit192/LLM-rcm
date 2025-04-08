@@ -1,2 +1,3 @@
 - pip install -r requirements.txt
 - execute run.bat
+- streamlit run frontend.py
