@@ -123,19 +123,28 @@ def edit_rating(user_rate:WatchedMovie):
         "movieId": user_rate.movieId
     })
 
+    curr_time = _get_current_timestamp()
+
     if (res is not None):
         rate_col.update_one(
             {"_id": res["_id"]},
             {"$set": {
                 "user_rate":user_rate.user_rate,
-                "timestamp":_get_current_timestamp()
+                "timestamp":curr_time
             }}
         )
     else:
         raise Exception("Movie not found")
     
     user_rate.userId = current_user["_id"]
-    return user_rate
+    temp = WatchedMovieOut(
+        userId=user_rate.userId,
+        movieId=user_rate.movieId,
+        user_rate=user_rate.user_rate,
+        timestamp=curr_time
+    )
+    print(temp)
+    return temp
 
 
 

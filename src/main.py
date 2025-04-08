@@ -94,7 +94,7 @@ async def search_movies(query_str):
     return services.search_movie_from_query(query_str)
 
 
-@app.post("/input_user_movies", response_model=WatchedMovie, status_code=status.HTTP_200_OK)
+@app.post("/input_user_movies", response_model=WatchedMovieOut, status_code=status.HTTP_200_OK)
 async def rate_movies(rate: WatchedMovie):
     """
     Đánh giá 1 bộ phim. Nếu muốn đánh giá lại, có thể gửi lại cùng Id của phim đó.

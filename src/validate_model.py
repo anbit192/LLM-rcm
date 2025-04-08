@@ -70,6 +70,7 @@ class WatchedMovieOut(WatchedMovie):
             "json_schema_extra": {
                         "examples": [
                         {
+                                "userId":"67f24f2ab996a5cf558def58",
                                 "movieId": 1,
                                 "user_rate":3.0,
                                 "timestamp":"2025-08-19"
