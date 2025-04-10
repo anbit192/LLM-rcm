@@ -30,7 +30,10 @@ class Recommender:
         user_like = []
         recommend_dict = {}
 
-        for movieId, row in self.movie_list.iterrows():
+        most_recent = self.movie_list.iloc[-3:]
+        print(most_recent)
+
+        for movieId, row in most_recent.iterrows():
 
             m_rating = row["rating"]
             m_weight_rating = row["weight_rating"]
@@ -44,6 +47,9 @@ class Recommender:
             rcm_dists = D.flatten().tolist()[1:]
 
             for id_, dist_ in zip(rcm_ids, rcm_dists):
+
+                if (id_ in self.movie_list.index):
+                    continue
 
                 if (m_rating < self.negative_thres):
                     if (id_ in user_like):
@@ -61,12 +67,14 @@ class Recommender:
 
                     recommend_dict[id_] = recommend_dict.get(id_, 0) + wgt
 
-        print(user_dislike)
+        # print(user_dislike)
         for id_ in set(user_dislike):
             recommend_dict.pop(id_, -1)
 
         sorted_candidates = sorted(recommend_dict.items(),
                                    key=lambda x: x[1], reverse=True)
+        
+        print(sorted_candidates)
 
         return sorted_candidates
 

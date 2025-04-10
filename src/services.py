@@ -191,8 +191,8 @@ def get_movies_from_ids(id_list):
 
 
 def search_movie_from_query(query_str):
-    query = query_str
-    res = movie_df[movie_df["title"].str.contains(query, case=False, na=False)].reset_index()["movieId"].tolist()[:10]
+    query = query_str.replace(",", "")
+    res = movie_df[movie_df["title"].str.replace(",", "", regex=False).str.contains(query, case=False, na=False)].reset_index()["movieId"].tolist()[:10]
     return get_movies_from_ids(res)
     
 
@@ -218,7 +218,7 @@ def recommend_movies():
     top_k = rec.get_top_k()
     movies = movie_df.iloc[top_k]
     print(movies[["title", "genres"]])
-    print(rec._get_rcm_ranking())
+    # print(rec._get_rcm_ranking())
     return _categorize_movie(movies)
 
 
