@@ -165,7 +165,7 @@ def _process_user_input(current_user):
     return user_df[[
         "vectorID", "title", "genres", "tags",
         "rating", "weight_rating", "timestamp", "page_content"
-    ]]
+    ]].sort_values("timestamp")
 
 rec = Recommender.get_instance(index, movie_list=_process_user_input(session.get_user()), k_per_item=15, negative_alpha=-1)
 
