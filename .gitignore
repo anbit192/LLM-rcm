@@ -1,5 +1,6 @@
 /data
 !data/movie_infos_2.csv
+!data/full_movie_infos.csv
 /venv
 */__pycache__
 *.env
