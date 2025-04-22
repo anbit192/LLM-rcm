@@ -164,7 +164,7 @@ def _process_user_input(current_user):
 
     return user_df[[
         "vectorID", "title", "genres", "tags",
-        "rating", "weight_rating", "timestamp", "page_content"
+        "rating", "weight_rating", "timestamp", "page_content", "Actors", "Director", "Plot", "Poster", "Language", "Runtime"
     ]].sort_values("timestamp")
 
 rec = Recommender.get_instance(index, movie_list=_process_user_input(session.get_user()), k_per_item=15, negative_alpha=-1)
@@ -179,11 +179,13 @@ def get_movie_by_id(id):
 
 def get_movies_from_ids(id_list):
     list_input = list(dict.fromkeys(id_list))
-    infos = movie_df.loc[list_input][["title", "genres", "tags", "weight_rating"]].reset_index()
+    infos = movie_df.loc[list_input][["title", "genres", "tags", "weight_rating", "Plot", "Poster", "Actors", "Director", "Language", "Runtime"]].reset_index()
     infos.rename(columns={"index":"movieId"})
 
     infos["genres"] = infos["genres"].apply(lambda x: x.split(","))
     infos["tags"] = infos["tags"].apply(lambda x: x.split(","))
+    infos["Actors"] = infos["Actors"].apply(lambda x: x.split(","))
+    infos["Director"] = infos["Director"].apply(lambda x: x.split(","))
 
     movies = [MovieInfosOut(**record) for record in infos.to_dict(orient="records")]
 
@@ -198,17 +200,25 @@ def search_movie_from_query(query_str):
 
 
 def _categorize_movie(movies):
+    movies = movies.reset_index()
     genre_map = defaultdict(list)
     for i in range(len(movies)):
-        title = movies.iloc[i]["title"]
+        movie = movies.iloc[i][["movieId","title", "genres", "tags", "weight_rating", "Plot", "Poster", "Actors", "Director", "Language", "Runtime"]]
+
+        # print(movie["title"])
+
+        movie["genres"] = movie["genres"].split(",")
+        movie["tags"] = movie["tags"].split(",")
+        movie["Actors"] = movie["Actors"].split(",")
+        movie["Director"] = movie["Director"].split(",")
+
+        # movie.rename(columns={"index":"movieId"})
         splitted_genres = [g for g in movies.iloc[i]["genres"].split(",")]
+
         
         for genre in splitted_genres:
-            genre_map[genre].append(
-                {
-                    "title": title
-                }
-            )
+            genre_map[genre].append(MovieInfosOut(**movie))
+            # print(genre_map)
 
     return [{ genre: movies } for genre, movies in sorted(genre_map.items())]
 
@@ -217,14 +227,16 @@ def recommend_movies():
     rec.set_movie_list(_process_user_input(session.get_user()))
     top_k = rec.get_top_k()
     movies = movie_df.iloc[top_k]
-    print(movies[["title", "genres"]])
+    # print(movies[["title", "genres"]])
     # print(rec._get_rcm_ranking())
-    return _categorize_movie(movies)
-
+    cat = _categorize_movie(movies)
+    print("==========================")
+    print(cat)
+    return cat
 
     
 def main():
-    print(recommend_movies())
+    recommend_movies()
 
 
 if __name__ == "__main__":

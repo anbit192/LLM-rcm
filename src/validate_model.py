@@ -33,6 +33,13 @@ class MovieInfosOut(BaseModel):
     genres: List[str]
     tags: List[str]
     weight_rating: float
+    Actors: List[str]
+    Plot: str
+    Poster:str
+    Director: List[str]
+    Language: str
+    Runtime:str
+
     model_config = {
             "json_schema_extra": {
                         "examples": [
@@ -41,7 +48,13 @@ class MovieInfosOut(BaseModel):
                                 "title": "Toy Story",
                                 "genres": ["Animation", "Family"],
                                 "tags": ["kids", "family"],
-                                "weight_rating": 3.9
+                                "weight_rating": 3.9,
+                                "Actors": ["Tom Hanks", "Tim Allen", "Don Rickles"],
+                                "Plot": "example plot",
+                                "Poster": "example url",
+                                "Director": ["John Lasseter"],
+                                "Language":"English",
+                                "Runtime":"81 min"
                 }
             ]
         }
@@ -113,7 +126,7 @@ class GenreMovies(BaseModel):
     genre: Dict[str, List[MovieTitle]]
 
 class MoviesResponse(RootModel):
-    root: List[Dict[str, List[MovieTitle]]]
+    root: List[Dict[str, List[MovieInfosOut]]]
     model_config = {
         "json_schema_extra": {
             "examples": [
