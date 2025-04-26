@@ -167,7 +167,7 @@ def _process_user_input(current_user):
         "rating", "weight_rating", "timestamp", "page_content", "Actors", "Director", "Plot", "Poster", "Language", "Runtime"
     ]].sort_values("timestamp")
 
-rec = Recommender.get_instance(index, movie_list=_process_user_input(session.get_user()), k_per_item=15, negative_alpha=-1)
+rec = Recommender.get_instance(index, movie_list=_process_user_input(session.get_user()), k_per_item=20, negative_alpha=-1, output_k=50)
 
 
 def get_movie_by_id(id):
@@ -218,6 +218,7 @@ def _categorize_movie(movies):
         
         for genre in splitted_genres:
             genre_map[genre].append(MovieInfosOut(**movie))
+            break
             # print(genre_map)
 
     return [{ genre: movies } for genre, movies in sorted(genre_map.items())]
