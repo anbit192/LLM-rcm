@@ -30,7 +30,7 @@ class Recommender:
         user_like = []
         recommend_dict = {}
 
-        most_recent = self.movie_list.iloc[-3:]
+        most_recent = self.movie_list.iloc[-5:]
         print(most_recent)
 
         for movieId, row in most_recent.iterrows():
@@ -71,7 +71,7 @@ class Recommender:
         for id_ in set(user_dislike):
             recommend_dict.pop(id_, -1)
 
-        sorted_candidates = sorted(recommend_dict.items(),
+        sorted_candidates = sorted(((k, v) for k, v in recommend_dict.items() if v >= 0),
                                    key=lambda x: x[1], reverse=True)
         
         print(sorted_candidates)

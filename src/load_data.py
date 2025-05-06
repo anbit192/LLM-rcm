@@ -6,7 +6,7 @@ import faiss
 parent_ = Path().cwd().parent
 
 def get_movie_df():
-    df = pd.read_csv(parent_ / "data/full_movie_infos.csv")
+    df = pd.read_csv(parent_ / "data/full_movie_infos.csv").fillna("")
     return df.set_index("movieId")
 
 def get_user_rates_df():

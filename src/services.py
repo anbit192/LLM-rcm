@@ -205,7 +205,10 @@ def _categorize_movie(movies):
     for i in range(len(movies)):
         movie = movies.iloc[i][["movieId","title", "genres", "tags", "weight_rating", "Plot", "Poster", "Actors", "Director", "Language", "Runtime"]]
 
-        # print(movie["title"])
+        
+        print(movie[["movieId", "Director"]].tolist())
+
+        
 
         movie["genres"] = movie["genres"].split(",")
         movie["tags"] = movie["tags"].split(",")
@@ -232,11 +235,12 @@ def recommend_movies():
     # print(rec._get_rcm_ranking())
     cat = _categorize_movie(movies)
     print("==========================")
-    print(cat)
+    # print(cat)
     return cat
 
     
 def main():
+    print(rec.movie_list)
     recommend_movies()
 
 

@@ -195,6 +195,8 @@ def recommend_section(results):
 
 def history_section():
     history = get_user_ratings()
+    if (len(history) < 1):
+        return
     ids = [item["movieId"] for item in history]
 
     res = get_movie_infos(ids)
